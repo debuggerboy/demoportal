@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/fasthttp/session/v2"
-	"github.com/fasthttp/session/v2/providers/redis"
+	"github.com/gofiber/session/v2"
+	"github.com/gofiber/session/v2/provider/redis"
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -29,8 +29,14 @@ func comparePasswords(hashedPassword, password string) error {
 }
 
 func isAuthenticated(c *fiber.Ctx) error {
-	session := session.Get(c)
-	authenticated, _ := session.GetBool("authenticated")
+	session, err := session.Get(c)
+	if err != nil {
+		return err
+	}
+	authenticated, err := session.GetBool("authenticated")
+	if err != nil {
+		return err
+	}
 	if !authenticated {
 		return fiber.ErrUnauthorized
 	}
@@ -50,7 +56,10 @@ func main() {
 
 	// Set up the session middleware
 	sessionConfig := session.Config{
-		ProviderConfig: store,
+		Provider:       store,
+		CookieName:     "sessionID",
+		Expiration:     86400, // Session expiration time in seconds (1 day)
+		CookieHTTPOnly: true,
 	}
 	app.Use(session.New(sessionConfig))
 
@@ -96,7 +105,10 @@ func main() {
 			return fiber.ErrUnauthorized
 		}
 
-		session := session.Get(c)
+		session, err := session.Get(c)
+		if err != nil {
+			return err
+		}
 		session.Set("authenticated", true)
 		if err := session.Save(); err != nil {
 			return err
