@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/fasthttp/session/v2"
-	"github.com/fasthttp/session/v2/providers/redis"
+	"github.com/gofiber/session/v2"
+	"github.com/gofiber/storage/redis"
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -43,17 +43,16 @@ func isAuthenticated(c *fiber.Ctx) error {
 func main() {
 	app := fiber.New()
 
-	// Create a Redis session provider
+	// Create a session manager using Redis
 	store, err := redis.New(redis.Config{
-		Addr: "session:6379",
+		Host: "session",
+		Port: 6379,
 	})
 	if err != nil {
 		panic(err)
 	}
-
-	// Set up the session middleware
 	sessionConfig := session.Config{
-		Provider: store,
+		Store: store,
 	}
 	app.Use(session.New(sessionConfig))
 
