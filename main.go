@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/session/v2"
-	"github.com/gofiber/storage/redis"
+	"github.com/gofiber/session/v2/provider/redis"
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -29,7 +29,10 @@ func comparePasswords(hashedPassword, password string) error {
 }
 
 func isAuthenticated(c *fiber.Ctx) error {
-	session := session.FromStore(c)
+	session, err := session.Get(c)
+	if err != nil {
+		return err
+	}
 	authenticated, _ := session.GetBool("authenticated")
 	if !authenticated {
 		return fiber.ErrUnauthorized
@@ -40,20 +43,20 @@ func isAuthenticated(c *fiber.Ctx) error {
 func main() {
 	app := fiber.New()
 
-	// Create a session store using Redis
+	// Create a Redis session provider
 	store, err := redis.New(redis.Config{
-		Host:     "session",
-		Port:     6379,
-		Database: 0,
+		KeyPrefix: "session:",
+		Addr:      "session:6379",
 	})
 	if err != nil {
 		panic(err)
 	}
 
 	// Set up the session middleware
-	app.Use(session.New(session.Config{
-		Store: store,
-	}))
+	sessionConfig := session.Config{
+		Expiration: 3600, // Session expiration in seconds
+	}
+	app.Use(session.New(sessionConfig, store))
 
 	// Set up the MySQL database connection
 	db, err := sql.Open("mysql", "demouser:demopass@tcp(db:3306)/webportal")
@@ -97,7 +100,10 @@ func main() {
 			return fiber.ErrUnauthorized
 		}
 
-		session := session.FromStore(c)
+		session, err := session.Get(c)
+		if err != nil {
+			return err
+		}
 		session.Set("authenticated", true)
 		if err := session.Save(); err != nil {
 			return err
