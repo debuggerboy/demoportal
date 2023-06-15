@@ -29,7 +29,7 @@ func comparePasswords(hashedPassword, password string) error {
 }
 
 func isAuthenticated(c *fiber.Ctx) error {
-	session, err := session.Get(c)
+	session, err := session.Start(nil, c.Context())
 	if err != nil {
 		return err
 	}
@@ -45,9 +45,7 @@ func main() {
 
 	// Create a Redis session provider
 	store, err := redis.New(redis.Config{
-		Addr:        "session:6379",
-		MaxIdle:     10,
-		IdleTimeout: 10,
+		Addr: "session:6379",
 	})
 	if err != nil {
 		panic(err)
@@ -55,7 +53,7 @@ func main() {
 
 	// Set up the session middleware
 	sessionConfig := session.Config{
-		Provider: store,
+		ProviderConfig: store,
 	}
 	app.Use(session.New(sessionConfig))
 
@@ -101,7 +99,7 @@ func main() {
 			return fiber.ErrUnauthorized
 		}
 
-		session, err := session.Get(c)
+		session, err := session.Start(nil, c.Context())
 		if err != nil {
 			return err
 		}
