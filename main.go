@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/session/v2"
-	"github.com/gofiber/session/v2/provider/redis"
+	"github.com/fasthttp/session/v2"
+	"github.com/fasthttp/session/v2/providers/redis"
 	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -45,18 +45,19 @@ func main() {
 
 	// Create a Redis session provider
 	store, err := redis.New(redis.Config{
-		KeyPrefix: "session:",
-		Addr:      "session:6379",
+		KeyPrefix:   "session:",
+		Addr:        "session:6379",
+		DialTimeout: 5,
 	})
 	if err != nil {
 		panic(err)
 	}
 
 	// Set up the session middleware
-	sessionConfig := session.Config{
-		Expiration: 3600, // Session expiration in seconds
+	sessionConfig := &session.Config{
+		Provider: store,
 	}
-	app.Use(session.New(sessionConfig, store))
+	app.Use(session.New(*sessionConfig))
 
 	// Set up the MySQL database connection
 	db, err := sql.Open("mysql", "demouser:demopass@tcp(db:3306)/webportal")
