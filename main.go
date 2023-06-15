@@ -46,7 +46,7 @@ func isAuthenticated(c *fiber.Ctx) error {
 func main() {
 	app := fiber.New()
 
-	// Create a Redis session provider
+	// Set up the Redis session provider
 	store, err := redis.New(redis.Config{
 		Addr: "session:6379",
 	})
@@ -56,10 +56,8 @@ func main() {
 
 	// Set up the session middleware
 	sessionConfig := session.Config{
-		Provider:       store,
-		CookieName:     "sessionID",
-		Expiration:     86400, // Session expiration time in seconds (1 day)
-		CookieHTTPOnly: true,
+		Provider: store,
+		KeyLookup: "header:X-Session-ID",
 	}
 	app.Use(session.New(sessionConfig))
 
