@@ -29,10 +29,7 @@ func comparePasswords(hashedPassword, password string) error {
 }
 
 func isAuthenticated(c *fiber.Ctx) error {
-	session, err := session.Get(c)
-	if err != nil {
-		return err
-	}
+	session := session.Get(c)
 	authenticated, _ := session.GetBool("authenticated")
 	if !authenticated {
 		return fiber.ErrUnauthorized
@@ -53,7 +50,7 @@ func main() {
 
 	// Set up the session middleware
 	sessionConfig := session.Config{
-		Provider: store,
+		ProviderConfig: store,
 	}
 	app.Use(session.New(sessionConfig))
 
@@ -99,10 +96,7 @@ func main() {
 			return fiber.ErrUnauthorized
 		}
 
-		session, err := session.Get(c)
-		if err != nil {
-			return err
-		}
+		session := session.Get(c)
 		session.Set("authenticated", true)
 		if err := session.Save(); err != nil {
 			return err
