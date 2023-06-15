@@ -45,8 +45,9 @@ func main() {
 
 	// Create a session manager using Redis
 	store, err := redis.New(redis.Config{
-		Host: "session",
-		Port: 6379,
+		Host:     "session",
+		Port:     6379,
+		Database: 0, // Redis database index
 	})
 	if err != nil {
 		panic(err)
