@@ -29,10 +29,7 @@ func comparePasswords(hashedPassword, password string) error {
 }
 
 func isAuthenticated(c *fiber.Ctx) error {
-	session, err := session.Get(c)
-	if err != nil {
-		return err
-	}
+	session := session.FromStore(c)
 	authenticated, _ := session.GetBool("authenticated")
 	if !authenticated {
 		return fiber.ErrUnauthorized
@@ -43,19 +40,20 @@ func isAuthenticated(c *fiber.Ctx) error {
 func main() {
 	app := fiber.New()
 
-	// Create a session manager using Redis
+	// Create a session store using Redis
 	store, err := redis.New(redis.Config{
 		Host:     "session",
 		Port:     6379,
-		Database: 0, // Redis database index
+		Database: 0,
 	})
 	if err != nil {
 		panic(err)
 	}
-	sessionConfig := session.Config{
+
+	// Set up the session middleware
+	app.Use(session.New(session.Config{
 		Store: store,
-	}
-	app.Use(session.New(sessionConfig))
+	}))
 
 	// Set up the MySQL database connection
 	db, err := sql.Open("mysql", "demouser:demopass@tcp(db:3306)/webportal")
@@ -99,10 +97,7 @@ func main() {
 			return fiber.ErrUnauthorized
 		}
 
-		session, err := session.Get(c)
-		if err != nil {
-			return err
-		}
+		session := session.FromStore(c)
 		session.Set("authenticated", true)
 		if err := session.Save(); err != nil {
 			return err
