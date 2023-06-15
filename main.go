@@ -45,19 +45,19 @@ func main() {
 
 	// Create a Redis session provider
 	store, err := redis.New(redis.Config{
-		KeyPrefix:   "session:",
 		Addr:        "session:6379",
-		DialTimeout: 5,
+		MaxIdle:     10,
+		IdleTimeout: 10,
 	})
 	if err != nil {
 		panic(err)
 	}
 
 	// Set up the session middleware
-	sessionConfig := &session.Config{
+	sessionConfig := session.Config{
 		Provider: store,
 	}
-	app.Use(session.New(*sessionConfig))
+	app.Use(session.New(sessionConfig))
 
 	// Set up the MySQL database connection
 	db, err := sql.Open("mysql", "demouser:demopass@tcp(db:3306)/webportal")
